@@ -1,0 +1,8 @@
+standard concentrations	0-100 uM at the beginning
+			0-200 uM from 6/4/2016 
+30/3/2016	plate1	column 12 is standard1
+			column 1 is not used
+31/3/2016	plate 1&2	100 ul of substrate was added instead of 50 ul, so 50 ul of H2O was added to standard wells to make volume consistent, resulting in 300 ul of the total volume
+		Plate1	soil solution may have not been properly applied to 8F
+25/4/2016	Column 1 & 12 are used
+		
