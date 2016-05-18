@@ -9,14 +9,20 @@ dd1 <- ldply(file_wt_plates, read_enzyme_rawdata, with_plate = TRUE)
 dd2 <- ldply(file_wtout_plates, read_enzyme_rawdata, with_plate = FALSE)
 enzyme_raw_dd <- rbind(dd1, dd2)
 
-# merge with sample ids
-sample_id_dd <- read.csv("Data/sample_number.csv")
-sample_id_dd <- within(sample_id_dd, {
-  date   <- dmy(date)
-  sample <- factor(sample)
-})
+# merge with sample ids and treatments
+  sample_id_dd <- read.csv("Data/sample_number.csv")
+  sample_id_dd <- within(sample_id_dd, {
+    date   <- dmy(date)
+    sample <- factor(sample)
+  })
+  
+  treat_dd <- read.csv("Data/treatment.csv")
+  treat_dd$sample <- factor(treat_dd$sample)
 
-enzyme_raw_dd <- merge(enzyme_raw_dd, sample_id_dd, 
+  sample_dd <- merge(sample_id_dd, treat_dd, by = "sample")
+
+
+enzyme_raw_dd <- merge(enzyme_raw_dd, sample_dd,
                        by    = c("date", "Group", "plate"), 
                        all.x = TRUE)
 enzyme_raw_dd <- enzyme_raw_dd[complete.cases(enzyme_raw_dd), ]
@@ -50,7 +56,6 @@ std_dd     <- subsetD(enzyme_raw_dd, grepl("Standard", as.character(Content)))
 
 # inspect sample measurements---------------------------------------------------
   boxplot(value ~ sample, data = measure_dd)
-  boxplot(value ~ sample, data = corrected_measure_dd)
   original_measure_dd <- measure_dd
   corrected_measure_dd <- ddply(measure_dd, .(sample), function(x){
     combns <- combn(4, 3)
@@ -61,9 +66,19 @@ std_dd     <- subsetD(enzyme_raw_dd, grepl("Standard", as.character(Content)))
     # return(data.frame(new_value))
     return(newx_list[[min_vars]])
   })
-  
   sm_dd <- merge(lm_summary_dd, corrected_measure_dd, by = "sample")
+  
   sm_dd$MUB <- with(sm_dd, (value - intercept)/slope)
+  boxplot(MUB ~ sample, data = sm_dd)
+  
+  summary_dd <- ddply(sm_dd, 
+                      .(sample, co2, water, species), 
+                      summarise, 
+                      MUB = mean(MUB))
+  
+  p <- ggplot(summary_dd, aes(x = co2, y = MUB, col = water))
+  p2 <- p + geom_boxplot() + facet_grid(. ~ species)
+  p2
   plot(MUB ~ sample, data = sm_dd)
   
   bset(measure_dd, sample == 1)
